@@ -2,6 +2,8 @@
 
 #include "rss1u/solver.hpp"
 
+#include <Eigen/Geometry>
+
 #include <cmath>
 
 namespace rss1u::examples {

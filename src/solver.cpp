@@ -1,5 +1,8 @@
 #include "rss1u/solver.hpp"
 
+#include <Eigen/Geometry>
+#include <Eigen/LU>
+
 #include <algorithm>
 #include <cmath>
 #include <utility>
