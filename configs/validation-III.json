@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "name": "构型 III：非平行空间驱动轴",
+  "units": {
+    "length": "mm",
+    "angle": "rad"
+  },
+  "coordinateConvention": "Each branch frame has axes parallel to the common base frame; platformOffset is the fixed coordinate of O in that translated frame.",
+  "branches": [
+    {
+      "axisPoint": [-10.0, 30.0, 380.0],
+      "axis": [-0.49999999999999994, 0.8660254037844387, 0.0],
+      "crankZero": [-42.60289043074065, -24.999999999999996, 7.745561757955797],
+      "platformOffset": [0.0, 0.0, 0.0],
+      "platformPoint": [-90.0, 30.0, -10.0],
+      "rodLength": 400.2812457538911,
+      "motorOffset": 0.0,
+      "motorLower": -2.6,
+      "motorUpper": 2.6
+    },
+    {
+      "axisPoint": [-10.0, -30.0, 330.0],
+      "axis": [-0.49999999999999994, -0.8660254037844387, 0.0],
+      "crankZero": [-42.65861100064014, 24.999999999999996, 7.432557264903163],
+      "platformOffset": [0.0, 0.0, 0.0],
+      "platformPoint": [-90.0, -30.0, -10.0],
+      "rodLength": 350.3266492575632,
+      "motorOffset": 0.0,
+      "motorLower": -2.6,
+      "motorUpper": 2.6
+    }
+  ],
+  "expressions": [
+    {
+      "axisPoint": ["-10", "30", "380"],
+      "axis": ["-sin(30)", "cos(30)", "0"],
+      "crankZero": ["-50*cos(30)*cos(10.30430188)", "-50*sin(30)", "50*cos(30)*sin(10.30430188)"],
+      "platformOffset": ["0", "0", "0"],
+      "platformPoint": ["-90", "30", "-10"],
+      "rodLength": "400.2812457538911",
+      "motorOffsetDegrees": "0",
+      "motorLowerDegrees": "-148.969026734",
+      "motorUpperDegrees": "148.969026734"
+    },
+    {
+      "axisPoint": ["-10", "-30", "330"],
+      "axis": ["-sin(30)", "-cos(30)", "0"],
+      "crankZero": ["-50*cos(30)*cos(9.88362536)", "50*sin(30)", "50*cos(30)*sin(9.88362536)"],
+      "platformOffset": ["0", "0", "0"],
+      "platformPoint": ["-90", "-30", "-10"],
+      "rodLength": "350.3266492575632",
+      "motorOffsetDegrees": "0",
+      "motorLowerDegrees": "-148.969026734",
+      "motorUpperDegrees": "148.969026734"
+    }
+  ]
+}

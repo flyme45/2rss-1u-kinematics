@@ -1,0 +1,33 @@
+name: build-and-test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libeigen3-dev python3-numpy
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: C++ tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Independent equation validation
+        run: python3 tests/reference_validation.py
+
+      - name: Three-configuration 1000-pose validation
+        run: python3 tests/batch_validation.py --config-dir configs
+
+      - name: Browser model and expression tests
+        run: node tests/test_visualizer.js
+

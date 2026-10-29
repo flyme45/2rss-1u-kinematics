@@ -1,0 +1,57 @@
+{
+  "version": 2,
+  "name": "构型 I：固定 x 轴",
+  "units": {
+    "length": "mm",
+    "angle": "rad"
+  },
+  "coordinateConvention": "Each branch frame has axes parallel to the common base frame; platformOffset is the fixed coordinate of O in that translated frame.",
+  "branches": [
+    {
+      "axisPoint": [-41.0, 0.0, 195.0],
+      "axis": [1.0, 0.0, 0.0],
+      "crankZero": [0.0, 23.326823374855284, 8.992180560815337],
+      "platformOffset": [0.0, 0.0, 0.0],
+      "platformPoint": [-41.0, 25.0, 8.9],
+      "rodLength": 195.09935529363676,
+      "motorOffset": 0.0,
+      "motorLower": -2.6,
+      "motorUpper": 2.6
+    },
+    {
+      "axisPoint": [-41.0, 0.0, 140.0],
+      "axis": [1.0, 0.0, 0.0],
+      "crankZero": [0.0, -23.328001980749068, 8.98912251480463],
+      "platformOffset": [0.0, 0.0, 0.0],
+      "platformPoint": [-41.0, -25.0, 8.9],
+      "rodLength": 140.0991000126136,
+      "motorOffset": 0.0,
+      "motorLower": -2.6,
+      "motorUpper": 2.6
+    }
+  ],
+  "expressions": [
+    {
+      "axisPoint": ["-41", "0", "195"],
+      "axis": ["1", "0", "0"],
+      "crankZero": ["0", "25*cos(21.08098853)", "25*sin(21.08098853)"],
+      "platformOffset": ["0", "0", "0"],
+      "platformPoint": ["-41", "25", "8.9"],
+      "rodLength": "195.09935529363676",
+      "motorOffsetDegrees": "0",
+      "motorLowerDegrees": "-148.969026734",
+      "motorUpperDegrees": "148.969026734"
+    },
+    {
+      "axisPoint": ["-41", "0", "140"],
+      "axis": ["1", "0", "0"],
+      "crankZero": ["0", "-25*cos(21.07347749)", "25*sin(21.07347749)"],
+      "platformOffset": ["0", "0", "0"],
+      "platformPoint": ["-41", "-25", "8.9"],
+      "rodLength": "140.0991000126136",
+      "motorOffsetDegrees": "0",
+      "motorLowerDegrees": "-148.969026734",
+      "motorUpperDegrees": "148.969026734"
+    }
+  ]
+}

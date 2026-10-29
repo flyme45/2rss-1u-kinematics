@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="离线 2-RSS-1U 空间机构运动学可视化与诊断工具">
+  <title>2-RSS-1U 运动学可视化</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">2-RSS-1U KINEMATICS</p>
+      <h1>空间机构交互可视化</h1>
+    </div>
+    <div class="topbar-note">
+      <span class="status-dot" id="header-status-dot"></span>
+      <span id="header-status">求解正常</span>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="viewer-panel" aria-label="三维机构视图">
+      <canvas id="mechanism-canvas"></canvas>
+      <div class="viewer-hint">拖动旋转视角 · 滚轮缩放 · 双击复位</div>
+      <div class="legend" aria-label="图例">
+        <span><i class="swatch branch-one"></i>支链 1</span>
+        <span><i class="swatch branch-two"></i>支链 2</span>
+        <span><i class="swatch motor-axis"></i>电机轴</span>
+        <span><i class="swatch platform"></i>平台</span>
+      </div>
+    </section>
+
+    <aside class="control-panel">
+      <section class="card controls-card">
+        <div class="section-title">
+          <div>
+            <p class="kicker">GEOMETRY</p>
+            <h2>机构与姿态</h2>
+          </div>
+          <div class="title-actions">
+            <button class="ghost-button" id="config-editor" type="button" title="添加、编辑、导入或导出机构构型">添加/管理构型</button>
+            <button class="ghost-button" id="reset-all" type="button">恢复构型</button>
+          </div>
+        </div>
+
+        <label class="field-label" for="preset">几何预设</label>
+        <select id="preset">
+          <option value="configuration-one">构型 I：固定 x 轴</option>
+          <option value="paper">构型 II：固定 y 轴</option>
+          <option value="arbitrary">任意空间驱动轴</option>
+        </select>
+
+        <div class="control-group">
+          <div class="group-heading">平台姿态</div>
+          <div class="slider-row">
+            <label for="pitch">Pitch</label>
+            <input id="pitch" type="range" min="-35" max="35" step="0.1" value="0">
+            <output id="pitch-value">0.0°</output>
+          </div>
+          <div class="slider-row">
+            <label for="roll">Roll</label>
+            <input id="roll" type="range" min="-35" max="35" step="0.1" value="0">
+            <output id="roll-value">0.0°</output>
+          </div>
+        </div>
+
+        <details open>
+          <summary>支链 1 电机轴 <code>u₁</code></summary>
+          <div class="slider-row compact">
+            <label for="axis1-azimuth">方位</label>
+            <input id="axis1-azimuth" type="range" min="-180" max="180" step="0.5">
+            <output id="axis1-azimuth-value"></output>
+          </div>
+          <div class="slider-row compact">
+            <label for="axis1-elevation">仰角</label>
+            <input id="axis1-elevation" type="range" min="-85" max="85" step="0.5">
+            <output id="axis1-elevation-value"></output>
+          </div>
+        </details>
+
+        <details open>
+          <summary>支链 2 电机轴 <code>u₂</code></summary>
+          <div class="slider-row compact">
+            <label for="axis2-azimuth">方位</label>
+            <input id="axis2-azimuth" type="range" min="-180" max="180" step="0.5">
+            <output id="axis2-azimuth-value"></output>
+          </div>
+          <div class="slider-row compact">
+            <label for="axis2-elevation">仰角</label>
+            <input id="axis2-elevation" type="range" min="-85" max="85" step="0.5">
+            <output id="axis2-elevation-value"></output>
+          </div>
+        </details>
+
+        <div class="button-row">
+          <button class="primary-button" id="animate" type="button">开始动画</button>
+          <button class="secondary-button" id="reset-view" type="button">视角复位</button>
+        </div>
+      </section>
+
+      <section class="card diagnostics-card" aria-live="polite">
+        <div class="section-title">
+          <div>
+            <p class="kicker">LIVE SOLVER</p>
+            <h2>实时求解结果</h2>
+          </div>
+          <span class="solver-badge" id="solver-badge">OK</span>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric"><span>θ₁</span><strong id="theta1">—</strong></div>
+          <div class="metric"><span>θ₂</span><strong id="theta2">—</strong></div>
+          <div class="metric"><span>det J</span><strong id="det-j">—</strong></div>
+          <div class="metric"><span>cond J</span><strong id="cond-j">—</strong></div>
+        </div>
+
+        <div class="diagnostic-block">
+          <div class="block-label">闭环长度误差 / mm</div>
+          <div class="mono" id="closure-error">—</div>
+        </div>
+        <div class="diagnostic-block">
+          <div class="block-label">J = ∂θ / ∂q</div>
+          <pre id="jacobian-matrix">—</pre>
+        </div>
+        <div class="diagnostic-block">
+          <div class="block-label">K / M / N 系数</div>
+          <pre id="kmn-values">—</pre>
+        </div>
+        <p class="solver-message" id="solver-message">连续装配分支已保持。</p>
+      </section>
+    </aside>
+  </main>
+
+  <div class="modal" id="config-modal" hidden>
+    <div class="modal-backdrop" data-close-config></div>
+    <section class="config-dialog" role="dialog" aria-modal="true" aria-labelledby="config-dialog-title">
+      <header class="config-dialog-header">
+        <div>
+          <p class="kicker">CONFIGURATION</p>
+          <h2 id="config-dialog-title">添加或编辑构型参数</h2>
+        </div>
+        <button class="icon-button" id="config-close" type="button" aria-label="关闭">×</button>
+      </header>
+
+      <div class="config-dialog-body">
+        <section class="config-guide" aria-labelledby="config-guide-title">
+          <div class="config-guide-title" id="config-guide-title">按下面 3 步添加构型</div>
+          <ol>
+            <li><strong>命名：</strong>当前预设会自动带入；要保留原构型，请先点“新建副本”。</li>
+            <li><strong>填写：</strong>分别输入两条 RSS 支链的零位几何参数和电机限位。</li>
+            <li><strong>保存：</strong>点击“检查并保存”，通过检查后会自动加入“几何预设”列表。</li>
+          </ol>
+          <p>构型保存在当前浏览器中；如需备份、换电脑或发给他人，请使用“导出 JSON”。</p>
+        </section>
+
+        <div class="config-name-row">
+          <label for="config-name">构型名称</label>
+          <input id="config-name" type="text" maxlength="60" placeholder="例如：样机标定参数 01">
+          <button class="secondary-button compact-button" id="config-new-copy" type="button">新建副本</button>
+        </div>
+
+        <details class="parameter-guide">
+          <summary>参数含义与坐标约定（首次填写建议展开）</summary>
+          <dl>
+            <div><dt>电机轴上的点 mᵢ</dt><dd>用来确定电机轴“经过哪里”。通常直接取电机输出轴与曲柄相交的转轴中心；它必须位于电机轴线上，并使用基座坐标系表示，单位 mm。</dd></div>
+            <div><dt>电机轴方向 uᵢ</dt><dd>驱动轴的方向向量，无单位；不必预先归一化，保存时会自动归一化。</dd></div>
+            <div><dt>曲柄零位向量 aᵢ₀</dt><dd>电机零位时，由 mᵢ 指向曲柄端球副 Aᵢ 的向量，单位 mm。</dd></div>
+            <div><dt>公共万向副中心 O</dt><dd>两条支链共用同一个 O 点，因此两侧输入会自动同步。若公共基座坐标系原点就在 O，请填 [0, 0, 0]；否则填写 O 在基座坐标系中的坐标，单位 mm。</dd></div>
+            <div><dt>平台球副向量 bᵢ₀</dt><dd>平台零位时，由 O 指向平台球副 Bᵢ 的固连向量，单位 mm。</dd></div>
+            <div><dt>连杆长度 Lᵢ</dt><dd>Aᵢ 与 Bᵢ 之间的固定长度，必须大于 0，单位 mm。</dd></div>
+            <div><dt>零偏与限位</dt><dd>均以角度填写；下限不得大于上限。</dd></div>
+            <div><dt>公式输入</dt><dd>支持 <code>sin</code>、<code>cos</code>、<code>tan</code>、<code>sqrt</code>、<code>abs</code>、<code>pi/π</code>、括号和 <code>+ - * / ^</code>。乘法必须写 <code>*</code>。</dd></div>
+            <div><dt>角度写法</dt><dd>三角函数中的普通数字默认按度计算，因此 <code>cos(15)</code> 就是 15°；含 <code>pi/π</code> 的公式按弧度计算。<code>cos(15)</code>、<code>cos(15°)</code> 与 <code>cos(pi/12)</code> 等价。</dd></div>
+            <div><dt>示例</dt><dd><code>-50*cos(15°)</code>、<code>50*sin(pi/12)</code>、<code>sqrt(2)/2</code> 均可直接填写，保存后仍保留原公式。</dd></div>
+            <div><dt>数值微调</dt><dd>纯数字可用右侧箭头：整数每次增减 1，保留几位小数就改变最后一位。公式请直接修改表达式。</dd></div>
+          </dl>
+        </details>
+
+        <div class="expression-callout" role="note">
+          <strong>输入框可以直接写公式</strong>
+          <span><code>-50*cos(15°)</code>　<code>50*sin(pi/12)</code>　<code>sqrt(2)/2</code></span>
+          <span>支持 <code>sin cos tan sqrt abs pi/π</code>；<code>sin(15)</code> 默认表示 15°，含 <code>pi/π</code> 时按弧度计算。电机角输入 <code>15</code>、<code>15°</code> 或 <code>pi/12</code> 都表示 15°。</span>
+        </div>
+
+        <div class="config-branches" id="config-branches"></div>
+        <p class="config-status" id="config-status" aria-live="polite"></p>
+      </div>
+
+      <footer class="config-dialog-footer">
+        <div class="footer-tools">
+          <button class="secondary-button" id="config-import" type="button">导入 JSON</button>
+          <button class="secondary-button" id="config-export" type="button">导出当前</button>
+          <button class="danger-button" id="config-delete" type="button">删除保存项</button>
+        </div>
+        <div class="footer-actions">
+          <button class="secondary-button" id="config-cancel" type="button">取消</button>
+          <button class="primary-button" id="config-save" type="button">检查并保存</button>
+        </div>
+      </footer>
+    </section>
+  </div>
+  <input id="config-import-file" type="file" accept="application/json,.json" hidden>
+
+  <footer class="page-footer">
+    计算模型与 <code>src/solver.cpp</code> 一致；长度单位为 mm，角度界面使用 °，内部使用 rad。
+  </footer>
+
+  <script src="expression.js"></script>
+  <script src="kinematics.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
