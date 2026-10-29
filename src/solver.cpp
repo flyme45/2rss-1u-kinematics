@@ -28,10 +28,12 @@ bool validOptions(const SolverOptions& options) noexcept {
     return std::isfinite(options.coefficient_tolerance)
         && std::isfinite(options.jacobian_tolerance)
         && std::isfinite(options.residual_tolerance)
+        && std::isfinite(options.closure_tolerance)
         && std::isfinite(options.maximum_step)
         && options.coefficient_tolerance > 0.0
         && options.jacobian_tolerance > 0.0
         && options.residual_tolerance > 0.0
+        && options.closure_tolerance > 0.0
         && options.maximum_step > 0.0
         && options.maximum_iterations > 0;
 }
@@ -293,13 +295,19 @@ ForwardResult Solver::forward(
             return result;
         }
         result.actuator_residual = predicted.actuator_angle - actuator_angle;
+        result.closure_error = closureLengthError(
+            result.joint_angle, actuator_angle);
         result.jacobian = jacobian(result.joint_angle, predicted.actuator_angle);
         if (!result.jacobian.ok()) {
             result.status = result.jacobian.status;
             return result;
         }
-        if (result.actuator_residual.cwiseAbs().maxCoeff()
-            < options_.residual_tolerance) {
+        const bool actuator_converged =
+            result.actuator_residual.cwiseAbs().maxCoeff()
+                <= options_.residual_tolerance;
+        const bool closure_converged = result.closure_error.allFinite()
+            && result.closure_error.norm() <= options_.closure_tolerance;
+        if (actuator_converged && closure_converged) {
             result.status = Status::Ok;
             return result;
         }

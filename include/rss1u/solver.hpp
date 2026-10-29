@@ -54,9 +54,11 @@ struct Geometry {
 struct SolverOptions {
     double coefficient_tolerance{1e-10};
     double jacobian_tolerance{1e-10};
-    double residual_tolerance{1e-9};
+    double residual_tolerance{1e-9};       // FK actuator-angle residual, rad.
     double maximum_step{0.20};
     int maximum_iterations{12};
+    // Appended to preserve existing five-field aggregate initialization.
+    double closure_tolerance{1e-8};        // FK rod-length residual norm, length unit.
 };
 
 struct BranchRoots {
@@ -94,6 +96,8 @@ struct ForwardResult {
     Vec2 actuator_residual{Vec2::Zero()};
     JacobianResult jacobian{};
     int iterations{0};
+    Vec2 closure_error{Vec2::Constant(
+        std::numeric_limits<double>::quiet_NaN())};
 
     [[nodiscard]] bool ok() const noexcept { return status == Status::Ok; }
 };

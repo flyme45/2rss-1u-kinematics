@@ -86,6 +86,11 @@ if(RSS1U_BUILD_STUDIO)
         set(RSS1U_STUDIO_QML_FILES
             apps/studio/qml/Main.qml
             apps/studio/qml/AngleControl.qml
+            apps/studio/qml/AxisControl.qml
+            apps/studio/qml/BranchEditor.qml
+            apps/studio/qml/ConfigurationDialog.qml
+            apps/studio/qml/Expression.js
+            apps/studio/qml/ExpressionField.qml
             apps/studio/qml/MechanismView.qml
             apps/studio/qml/Rod3D.qml
             apps/studio/qml/Joint3D.qml)
@@ -100,6 +105,22 @@ if(RSS1U_BUILD_STUDIO)
             URI RSS1UStudio
             VERSION 1.0
             QML_FILES ${RSS1U_STUDIO_QML_FILES})
+
+        set(RSS1U_STUDIO_CONFIGURATION_FILES
+            configs/validation-I.json
+            configs/validation-II.json
+            configs/validation-III.json)
+        foreach(RSS1U_STUDIO_CONFIGURATION_FILE IN LISTS
+                RSS1U_STUDIO_CONFIGURATION_FILES)
+            get_filename_component(RSS1U_STUDIO_CONFIGURATION_NAME
+                "${RSS1U_STUDIO_CONFIGURATION_FILE}" NAME)
+            set_source_files_properties("${RSS1U_STUDIO_CONFIGURATION_FILE}"
+                PROPERTIES QT_RESOURCE_ALIAS
+                    "configs/${RSS1U_STUDIO_CONFIGURATION_NAME}")
+        endforeach()
+        qt_add_resources(rss1u_studio "studio_configurations"
+            PREFIX "/rss1u"
+            FILES ${RSS1U_STUDIO_CONFIGURATION_FILES})
 
         qt_finalize_target(rss1u_studio)
     else()

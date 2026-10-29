@@ -230,6 +230,9 @@ auto fk = solver.forward(ik.actuator_angle, desired_q); // use previous q in pra
 | `theta_L/theta_R` | `actuator_reference` 或实测执行器角 |
 
 内部统一使用 `[pitch, roll]`，单位为弧度；几何长度单位可以是 mm 或 m，但同一个机构必须一致。
+`SolverOptions::residual_tolerance` 用于 FK 的执行器角残差，单位为 rad；
+`SolverOptions::closure_tolerance` 用于两条支链长度残差向量的二范数，单位与几何长度一致。
+FK 只有在这两个条件同时满足时才报告成功，避免角残差已经很小但杆长闭环精度仍不足。
 
 ## 验证范围
 

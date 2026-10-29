@@ -22,6 +22,12 @@ void check(bool condition, const std::string& message) {
 void testInvalidGeometryAndOptions() {
     using namespace rss1u;
 
+    const SolverOptions legacy_style_options{
+        1e-10, 1e-10, 1e-9, 0.20, 12};
+    check(legacy_style_options.maximum_iterations == 12
+              && legacy_style_options.closure_tolerance == 1e-8,
+          "five-field SolverOptions initialization keeps the default closure tolerance");
+
     Geometry zero_axis = examples::currentAnkleExample();
     zero_axis.branches[0].axis.setZero();
     Solver zero_axis_solver(zero_axis);
@@ -55,6 +61,11 @@ void testInvalidGeometryAndOptions() {
     invalid_options.maximum_iterations = 0;
     check(!Solver(examples::currentAnkleExample(), invalid_options).geometryValid(),
           "non-positive iteration limit is rejected");
+
+    SolverOptions invalid_closure_tolerance;
+    invalid_closure_tolerance.closure_tolerance = 0.0;
+    check(!Solver(examples::currentAnkleExample(), invalid_closure_tolerance).geometryValid(),
+          "non-positive closure tolerance is rejected");
 }
 
 void testNonFiniteInput() {

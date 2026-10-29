@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import QtQuick3D
 import QtQuick3D.Helpers
 
@@ -106,6 +107,38 @@ Rectangle {
             text: "左键旋转 · 右键平移 · 滚轮缩放"
             color: "#91aab6"
             font.pixelSize: 11
+        }
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.bottom: parent.bottom
+        anchors.margins: 12
+        radius: 6
+        color: "#b0061016"
+        border.color: "#2a4655"
+        width: legendRow.implicitWidth + 20
+        height: legendRow.implicitHeight + 14
+
+        RowLayout {
+            id: legendRow
+            anchors.centerIn: parent
+            spacing: 12
+
+            Repeater {
+                model: [
+                    ["#ffad5a", "支链 1"],
+                    ["#55d6e7", "支链 2"],
+                    ["#4f83ff", "电机轴"],
+                    ["#e2edf2", "平台 / 固定 O"]
+                ]
+                delegate: RowLayout {
+                    required property var modelData
+                    spacing: 4
+                    Rectangle { width: 14; height: 3; radius: 1; color: modelData[0] }
+                    Label { text: modelData[1]; color: "#91aab6"; font.pixelSize: 9 }
+                }
+            }
         }
     }
 }

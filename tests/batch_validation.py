@@ -91,6 +91,12 @@ def validate_configuration(
 
         reconstructed, _ = reference.forward(branches, theta, 0.8 * q)
         roundtrip_values.append(float(np.linalg.norm(reconstructed - q)))
+        reconstructed_closure = reference.closure_error(branches, reconstructed, theta)
+        if np.linalg.norm(reconstructed_closure) > reference.CLOSURE_TOLERANCE:
+            raise AssertionError(
+                f"{name}: FK closure residual exceeds tolerance at q={q.tolist()}: "
+                f"{reconstructed_closure.tolist()}"
+            )
 
         analytical = reference.jacobian(branches, q, theta)
         numerical = finite_difference_jacobian(

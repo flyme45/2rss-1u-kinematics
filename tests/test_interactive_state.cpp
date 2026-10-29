@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -31,7 +33,14 @@ void checkNear(
 void checkClosed(
     const rss1u::studio::InteractiveSnapshot& snapshot,
     const std::string& message) {
-    check(snapshot.closure_error.cwiseAbs().maxCoeff() < 1e-8, message);
+    std::ostringstream detail;
+    detail << std::setprecision(17)
+           << message << " norm=" << snapshot.closure_error.norm()
+           << " value=[" << snapshot.closure_error.x()
+           << ", " << snapshot.closure_error.y() << ']';
+    check(snapshot.closure_error.allFinite()
+              && snapshot.closure_error.norm() <= 1e-8,
+          detail.str());
 }
 
 void testAutomaticInputRouting() {

@@ -7,6 +7,8 @@
 
   const COEFFICIENT_TOLERANCE = 1e-10;
   const JACOBIAN_TOLERANCE = 1e-10;
+  const ACTUATOR_RESIDUAL_TOLERANCE = 1e-9;
+  const CLOSURE_TOLERANCE = 1e-8;
   const MOTOR_LIMIT = 2.6;
 
   const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -419,7 +421,12 @@
       const predicted = inverse(branches, q, theta);
       const residual = sub2(predicted.theta, theta);
       const differential = jacobian(branches, q, predicted.theta);
-      if (Math.max(Math.abs(residual[0]), Math.abs(residual[1])) < 1e-9) {
+      const closure = closureError(branches, q, theta);
+      const actuatorConverged = Math.max(
+        Math.abs(residual[0]), Math.abs(residual[1]),
+      ) <= ACTUATOR_RESIDUAL_TOLERANCE;
+      const closureConverged = Math.hypot(...closure) <= CLOSURE_TOLERANCE;
+      if (actuatorConverged && closureConverged) {
         return { q, iterations: iteration + 1 };
       }
       const step = multiply2(invert2(differential.matrix).inverse, residual);

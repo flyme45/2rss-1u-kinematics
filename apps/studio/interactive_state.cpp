@@ -81,8 +81,8 @@ UpdateOutcome InteractiveState::update(
         const InteractiveSnapshot candidate = makeSnapshot(
             candidate_joint, inverse.actuator_angle, SolveDirection::Inverse, 0);
         if (!candidate.closure_error.allFinite()
-            || candidate.closure_error.cwiseAbs().maxCoeff()
-                > std::max(1e-7, solver_.options().residual_tolerance * 100.0)) {
+            || candidate.closure_error.norm()
+                > solver_.options().closure_tolerance) {
             return reject(Status::Unreachable, "IK 闭环长度残差超出容差");
         }
         snapshot_ = candidate;
@@ -106,8 +106,8 @@ UpdateOutcome InteractiveState::update(
             SolveDirection::Forward,
             forward.iterations);
         if (!candidate.closure_error.allFinite()
-            || candidate.closure_error.cwiseAbs().maxCoeff()
-                > std::max(1e-7, solver_.options().residual_tolerance * 100.0)) {
+            || candidate.closure_error.norm()
+                > solver_.options().closure_tolerance) {
             return reject(Status::Unreachable, "FK 闭环长度残差超出容差");
         }
         snapshot_ = candidate;

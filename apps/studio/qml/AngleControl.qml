@@ -22,7 +22,30 @@ Rectangle {
     border.width: 1
 
     function display(value) {
-        return Math.abs(value) < 0.00005 ? "0.0000" : Number(value).toFixed(4)
+        if (!Number.isFinite(value))
+            return ""
+        const normalized = Math.abs(value) < 0.0000005 ? 0 : Number(value)
+        return normalized.toFixed(6).replace(/\.?0+$/, "")
+    }
+
+    function plainNumberInfo(text) {
+        const match = String(text).trim().match(/^[+-]?\d+(?:\.(\d*))?$/)
+        if (!match)
+            return null
+        const decimals = match[1] ? match[1].length : 0
+        return { value: Number(text), decimals: decimals }
+    }
+
+    function stepInput(direction) {
+        const info = plainNumberInfo(angleField.text)
+        if (!info)
+            return
+        const factor = Math.pow(10, info.decimals)
+        const next = (Math.round(info.value * factor) + direction) / factor
+        angleField.text = info.decimals ? next.toFixed(info.decimals) : String(next)
+        angleField.dirty = true
+        inputInvalid = false
+        angleField.commit()
     }
 
     function synchronize(force) {
@@ -91,60 +114,90 @@ Rectangle {
                 ToolTip.text: root.display(value) + "°"
             }
 
-            TextField {
-                id: angleField
-                property bool dirty: false
+            RowLayout {
+                Layout.preferredWidth: 118
+                spacing: 0
 
-                Layout.preferredWidth: 96
-                horizontalAlignment: TextInput.AlignRight
-                selectByMouse: true
-                color: root.inputInvalid ? "#ff8b96" : "#eff8fb"
-                placeholderText: "角度"
-                inputMethodHints: Qt.ImhFormattedNumbersOnly
-                validator: DoubleValidator {
-                    bottom: root.minimumValue
-                    top: root.maximumValue
-                    decimals: 6
-                    notation: DoubleValidator.StandardNotation
-                }
+                TextField {
+                    id: angleField
+                    property bool dirty: false
 
-                background: Rectangle {
-                    radius: 5
-                    color: "#08131a"
-                    border.color: root.inputInvalid ? "#ff6f7d"
-                                                    : (angleField.activeFocus ? "#62d7d5" : "#304958")
-                }
-
-                onTextEdited: {
-                    dirty = true
-                    root.inputInvalid = false
-                }
-
-                function commit() {
-                    if (!dirty)
-                        return
-                    if (!acceptableInput || text.trim().length === 0) {
-                        root.inputInvalid = true
-                        root.invalidInput()
-                        return
+                    Layout.fillWidth: true
+                    horizontalAlignment: TextInput.AlignRight
+                    selectByMouse: true
+                    color: root.inputInvalid ? "#ff8b96" : "#eff8fb"
+                    placeholderText: "角度"
+                    inputMethodHints: Qt.ImhFormattedNumbersOnly
+                    validator: DoubleValidator {
+                        bottom: root.minimumValue
+                        top: root.maximumValue
+                        decimals: 6
+                        notation: DoubleValidator.StandardNotation
                     }
-                    const candidate = Number(text)
-                    if (!Number.isFinite(candidate)) {
-                        root.inputInvalid = true
-                        root.invalidInput()
-                        return
+
+                    background: Rectangle {
+                        radius: 5
+                        color: "#08131a"
+                        border.color: root.inputInvalid ? "#ff6f7d"
+                                                        : (angleField.activeFocus ? "#62d7d5" : "#304958")
                     }
-                    dirty = false
-                    root.inputInvalid = false
-                    root.userEdited(candidate)
+
+                    onTextEdited: {
+                        dirty = true
+                        root.inputInvalid = false
+                    }
+
+                    function commit() {
+                        if (!dirty)
+                            return
+                        if (!acceptableInput || text.trim().length === 0) {
+                            root.inputInvalid = true
+                            root.invalidInput()
+                            return
+                        }
+                        const candidate = Number(text)
+                        if (!Number.isFinite(candidate)) {
+                            root.inputInvalid = true
+                            root.invalidInput()
+                            return
+                        }
+                        dirty = false
+                        root.inputInvalid = false
+                        root.userEdited(candidate)
+                    }
+
+                    onAccepted: {
+                        commit()
+                        if (!root.inputInvalid)
+                            focus = false
+                    }
+                    onEditingFinished: commit()
+                    Keys.onPressed: function(event) {
+                        if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                            if (root.plainNumberInfo(text)) {
+                                root.stepInput(event.key === Qt.Key_Up ? 1 : -1)
+                                event.accepted = true
+                            }
+                        }
+                    }
                 }
 
-                onAccepted: {
-                    commit()
-                    if (!root.inputInvalid)
-                        focus = false
+                Column {
+                    Layout.preferredWidth: 22
+                    Layout.fillHeight: true
+                    ToolButton {
+                        width: parent.width; height: parent.height / 2; padding: 0
+                        text: "▲"; font.pixelSize: 8
+                        enabled: Boolean(root.plainNumberInfo(angleField.text))
+                        onClicked: root.stepInput(1)
+                    }
+                    ToolButton {
+                        width: parent.width; height: parent.height / 2; padding: 0
+                        text: "▼"; font.pixelSize: 8
+                        enabled: Boolean(root.plainNumberInfo(angleField.text))
+                        onClicked: root.stepInput(-1)
+                    }
                 }
-                onEditingFinished: commit()
             }
 
             Label {

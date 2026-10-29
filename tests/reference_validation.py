@@ -11,6 +11,10 @@ from pathlib import Path
 import numpy as np
 
 
+ACTUATOR_RESIDUAL_TOLERANCE = 1e-9
+CLOSURE_TOLERANCE = 1e-8
+
+
 CONFIG_DIRECTORY = Path(__file__).resolve().parents[1] / "configs"
 
 
@@ -215,7 +219,9 @@ def forward(branches: list[Branch], theta: np.ndarray, seed: np.ndarray) -> tupl
         predicted = inverse(branches, q, theta)
         residual = predicted - theta
         j = jacobian(branches, q, predicted)
-        if np.max(np.abs(residual)) < 1e-9:
+        actuator_converged = np.max(np.abs(residual)) <= ACTUATOR_RESIDUAL_TOLERANCE
+        closure_converged = np.linalg.norm(closure_error(branches, q, theta)) <= CLOSURE_TOLERANCE
+        if actuator_converged and closure_converged:
             return q, iteration + 1
         step = np.linalg.solve(j, residual)
         scale = min(1.0, 0.20 / np.max(np.abs(step)))
@@ -239,6 +245,7 @@ def validate_geometry(name: str, branches: list[Branch]) -> None:
 
     reconstructed, iterations = forward(branches, theta, target * 0.8)
     assert np.linalg.norm(reconstructed - target) < 1e-8
+    assert np.linalg.norm(closure_error(branches, reconstructed, theta)) <= CLOSURE_TOLERANCE
     assert iterations <= 12
 
     analytical = jacobian(branches, target, theta)
@@ -260,11 +267,24 @@ def validate_geometry(name: str, branches: list[Branch]) -> None:
     assert abs(tau_q @ q_dot - tau_theta @ theta_dot) < 1e-10
 
 
+def validate_paper_forward_closure_regression() -> None:
+    """Regression for the CI failure at q=[0.08, -0.05]."""
+    branches = current_geometry()
+    target = np.array([0.08, -0.05])
+    theta = inverse(branches, target, np.zeros(2))
+    reconstructed, _ = forward(branches, theta, 0.8 * target)
+    assert np.linalg.norm(reconstructed - target) < 1e-8
+    assert np.linalg.norm(
+        closure_error(branches, reconstructed, theta)
+    ) <= CLOSURE_TOLERANCE
+
+
 def main() -> None:
     validate_geometry("paper-compatible", current_geometry())
     validate_geometry("synthetic arbitrary spatial axes", arbitrary_axis_geometry())
     validate_geometry("configuration I fixed x axes", fixed_x_axis_geometry())
     validate_geometry("saved arbitrary spatial axes", saved_spatial_axis_geometry())
+    validate_paper_forward_closure_regression()
     print("reference validation passed: IK/FK, dual roots, analytic Jacobian, virtual work")
 
 

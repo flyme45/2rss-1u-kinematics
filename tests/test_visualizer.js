@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 const model = require("../apps/visualizer/kinematics.js");
 const expression = require("../apps/visualizer/expression.js");
 
@@ -47,6 +48,9 @@ function validate(name, branches, options = {}) {
 
   const forward = model.forward(branches, inverse.theta, [0.048, -0.032]);
   assert(Math.hypot(forward.q[0] - q[0], forward.q[1] - q[1]) < 1e-8, `${name}: FK/IK mismatch`);
+  const forwardClosure = model.closureError(branches, forward.q, inverse.theta);
+  assert(Math.hypot(...forwardClosure) <= 1e-8,
+    `${name}: FK closure residual ${Math.hypot(...forwardClosure)}`);
   console.log(`${name}: passed; max closure=${Math.max(...closure.map(Math.abs))}, J diff=${maximumDifference}`);
 }
 
@@ -149,3 +153,47 @@ try {
   invalidExpressionRejected = /sqrt/.test(String(error));
 }
 assert(invalidExpressionRejected, "invalid expression must be rejected");
+
+// Qt Studio 使用适配 QML 的同规则解析器；在无 Qt 的 CI 环境中仍检查其
+// JavaScript 语法及度/弧度语义，防止网页与桌面端公式输入发生漂移。
+const studioExpressionPath = path.join(
+  __dirname, "..", "apps", "studio", "qml", "Expression.js",
+);
+let studioExpressionSource = fs.readFileSync(studioExpressionPath, "utf8");
+studioExpressionSource = studioExpressionSource.slice(
+  studioExpressionSource.indexOf("\n") + 1,
+);
+const studioExpression = { Math, Number, String, Boolean, Error, NaN };
+vm.createContext(studioExpression);
+vm.runInContext(studioExpressionSource, studioExpression);
+assert(Math.abs(studioExpression.evaluate("-50*cos(30)*cos(10.30430188)", false)
+  + 42.60289043074065) < 1e-12, "Studio nested cosine expression");
+assert(Math.abs(studioExpression.evaluate("50*sin(pi/12)", false)
+  - 12.940952255126037) < 1e-12, "Studio pi expression");
+assert(Math.abs(studioExpression.evaluate("pi/12", true) - 15) < 1e-12,
+  "Studio angle field pi expression");
+configurationCases.forEach(([fileName]) => {
+  const document = JSON.parse(fs.readFileSync(
+    path.join(__dirname, "..", "configs", fileName), "utf8",
+  ));
+  document.branches.forEach((branch, branchIndex) => {
+    vectorFields.forEach((field) => branch[field].forEach((value, component) => {
+      const evaluated = studioExpression.evaluate(
+        document.expressions[branchIndex][field][component], false,
+      );
+      assert(Math.abs(evaluated - value) < 1e-10,
+        `Studio ${fileName} expression mismatch: branch ${branchIndex + 1} ${field}[${component}]`);
+    }));
+    [
+      ["motorOffsetDegrees", "motorOffset"],
+      ["motorLowerDegrees", "motorLower"],
+      ["motorUpperDegrees", "motorUpper"],
+    ].forEach(([expressionField, numericField]) => {
+      const degrees = studioExpression.evaluate(
+        document.expressions[branchIndex][expressionField], true,
+      );
+      assert(Math.abs(degrees * Math.PI / 180 - branch[numericField]) < 1e-10,
+        `Studio ${fileName} angle expression mismatch: branch ${branchIndex + 1} ${expressionField}`);
+    });
+  });
+});

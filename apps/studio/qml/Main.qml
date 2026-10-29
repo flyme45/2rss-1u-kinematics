@@ -20,6 +20,12 @@ ApplicationWindow {
         return Number(value).toFixed(digits)
     }
 
+    ConfigurationDialog {
+        id: configurationDialog
+        availableWidth: window.width
+        availableHeight: window.height
+    }
+
     header: Rectangle {
         implicitHeight: 70
         color: "#09141c"
@@ -103,6 +109,80 @@ ApplicationWindow {
                 color: studio.lastRequestSucceeded ? "#8de0c7" : "#ff9aa4"
                 font.pixelSize: 12
                 elide: Text.ElideRight
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 112
+            radius: 10
+            color: "#0b171f"
+            border.color: "#233b49"
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 10
+
+                ColumnLayout {
+                    Layout.preferredWidth: 330
+                    Layout.fillHeight: true
+                    spacing: 5
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Label {
+                            text: "机构构型"
+                            color: "#edf7fb"
+                            font.pixelSize: 14
+                            font.weight: Font.DemiBold
+                        }
+                        Label {
+                            text: "公共 O · 长度 mm · 角度 °"
+                            color: "#68818e"
+                            font.pixelSize: 9
+                        }
+                    }
+                    ComboBox {
+                        id: configurationSelector
+                        Layout.fillWidth: true
+                        model: studio.configurationNames
+                        currentIndex: studio.currentConfigurationIndex
+                        onActivated: function(index) { studio.selectConfiguration(index) }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        Button {
+                            text: "添加/管理构型"
+                            Layout.fillWidth: true
+                            onClicked: configurationDialog.openCurrent()
+                        }
+                        Button {
+                            text: "恢复构型"
+                            onClicked: studio.resetCurrentConfiguration()
+                        }
+                    }
+                }
+
+                AxisControl {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    title: "支链 1 电机轴 u₁"
+                    azimuth: studio.axis1AzimuthDegrees
+                    elevation: studio.axis1ElevationDegrees
+                    onAzimuthEdited: function(value) { studio.setAxis1AzimuthDegrees(value) }
+                    onElevationEdited: function(value) { studio.setAxis1ElevationDegrees(value) }
+                }
+                AxisControl {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    title: "支链 2 电机轴 u₂"
+                    azimuth: studio.axis2AzimuthDegrees
+                    elevation: studio.axis2ElevationDegrees
+                    onAzimuthEdited: function(value) { studio.setAxis2AzimuthDegrees(value) }
+                    onElevationEdited: function(value) { studio.setAxis2ElevationDegrees(value) }
+                }
             }
         }
 
@@ -210,6 +290,23 @@ ApplicationWindow {
                                 color: studio.jacobianAvailable ? "#cfe2e9" : "#ff9aa4"
                                 font.family: "Consolas"
                                 font.pixelSize: 12
+                            }
+                        }
+
+                        Label { text: "K / M / N 系数"; color: "#8da5b0"; font.pixelSize: 11 }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 86
+                            radius: 6
+                            color: "#071119"
+                            Label {
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                text: studio.kmnText
+                                color: "#cfe2e9"
+                                font.family: "Consolas"
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
                             }
                         }
 

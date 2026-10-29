@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 namespace {
@@ -25,6 +27,19 @@ void checkNear(double actual, double expected, double tolerance,
           + " expected=" + std::to_string(expected));
 }
 
+void checkVectorNorm(
+    const rss1u::Vec2& value,
+    double tolerance,
+    const std::string& message) {
+    std::ostringstream detail;
+    detail << std::setprecision(17)
+           << message
+           << " norm=" << value.norm()
+           << " tolerance=" << tolerance
+           << " value=[" << value.x() << ", " << value.y() << ']';
+    check(value.allFinite() && value.norm() <= tolerance, detail.str());
+}
+
 void checkRoundTrip(
     const rss1u::Geometry& geometry,
     const rss1u::Vec2& target,
@@ -38,9 +53,10 @@ void checkRoundTrip(
     if (zero.ok()) {
         check(zero.actuator_angle.norm() < 1e-8,
               name + ": zero pose selects the calibrated zero branch");
-        check(solver.closureLengthError(Vec2::Zero(), zero.actuator_angle).norm()
-                  < 1e-9,
-              name + ": zero pose closes both branches");
+        checkVectorNorm(
+            solver.closureLengthError(Vec2::Zero(), zero.actuator_angle),
+            1e-9,
+            name + ": zero pose closes both branches");
     }
 
     const InverseResult ik = solver.inverse(target, Vec2::Zero());
@@ -48,17 +64,29 @@ void checkRoundTrip(
     if (!ik.ok()) {
         return;
     }
-    check(solver.closureLengthError(target, ik.actuator_angle).norm() < 1e-9,
-          name + ": IK satisfies both rod-length constraints");
+    checkVectorNorm(
+        solver.closureLengthError(target, ik.actuator_angle),
+        1e-9,
+        name + ": IK satisfies both rod-length constraints");
 
     const ForwardResult fk = solver.forward(ik.actuator_angle, target * 0.8);
     check(fk.ok(), name + ": warm-started FK converges");
     if (fk.ok()) {
-        check((fk.joint_angle - target).norm() < 1e-8,
-              name + ": IK/FK round trip returns the target pose");
-        check(solver.closureLengthError(fk.joint_angle, ik.actuator_angle).norm()
-                  < 1e-8,
-              name + ": reconstructed pose closes both branches");
+        checkVectorNorm(
+            fk.joint_angle - target,
+            1e-8,
+            name + ": IK/FK round trip returns the target pose");
+        const Vec2 reconstructed_closure = solver.closureLengthError(
+            fk.joint_angle, ik.actuator_angle);
+        checkVectorNorm(
+            reconstructed_closure,
+            solver.options().closure_tolerance,
+            name + ": reconstructed pose closes both branches");
+        check(fk.closure_error.isApprox(reconstructed_closure, 1e-14),
+              name + ": FK reports the same closure residual as direct evaluation");
+        check(fk.actuator_residual.cwiseAbs().maxCoeff()
+                  <= solver.options().residual_tolerance,
+              name + ": FK satisfies its actuator-angle stopping tolerance");
     }
 }
 
