@@ -3,7 +3,7 @@
 这是基于 Qt 6、QML 与 Qt Quick 3D 的桌面交互程序。运动学只调用项目现有的
 `rss1u::Solver`；QML 不包含 IK、FK 或 Jacobian 公式。
 
-## 本阶段已实现
+## 功能
 
 - Pitch、Roll、θ₁、θ₂ 四组控件始终可见；
 - 每个变量同时提供滑块和可精确编辑的小数输入框；
@@ -73,8 +73,8 @@ ctest --test-dir build --output-on-failure
 若 CMake 未找到 Qt，`rss1u_studio` 图形目标会跳过，但求解器和
 `rss1u_studio_state_tests` 仍可正常构建测试。
 
-## 当前边界
+## 适用范围
 
-Studio 聚焦单机交互、构型管理与真实三维闭环，不连接或下发真实电机控制
-指令。批量随机验证仍由 `tests/batch_validation.py` 执行；界面中的构型编辑不会
-替代标定流程，也不会通过改变杆长或播放虚假动画掩盖不可达状态。
+Studio 用于单机交互、构型管理与三维运动学可视化，不连接或下发真实电机控制
+指令。批量随机验证由 `tests/batch_validation.py` 执行。构型参数需根据机构的
+设计或标定结果填写；不可达请求会显示错误并保留最后有效姿态。

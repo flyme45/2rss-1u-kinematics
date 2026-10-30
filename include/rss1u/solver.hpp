@@ -40,8 +40,8 @@ struct BranchGeometry {
     Vec3 axis_point{Vec3::Zero()};       // Any point on the motor revolute axis.
     Vec3 axis{Vec3::UnitY()};            // Positive motor-axis direction.
     Vec3 crank_zero{Vec3::UnitX()};      // Axis point -> crank ball at theta = 0.
-    Vec3 platform_offset{Vec3::Zero()};  // Fixed coordinates of U-joint center O (legacy AP).
-    Vec3 platform_point{Vec3::Zero()};   // O -> platform ball B at zero pose (legacy PB).
+    Vec3 platform_offset{Vec3::Zero()};  // Fixed coordinates of U-joint center O.
+    Vec3 platform_point{Vec3::Zero()};   // O -> platform ball B at zero pose.
     double rod_length{1.0};              // Distance between the two S joints.
     double motor_zero_offset{0.0};       // Physical angle = encoder + offset.
     AngleLimit motor_limit{};
